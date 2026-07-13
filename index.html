@@ -60,7 +60,7 @@
     font-size: 14px;
     line-height: 1.5;
   }
-  form {
+  form, .gate-body {
     padding: 32px 36px 36px 36px;
   }
   .field {
@@ -78,7 +78,7 @@
     color: var(--muted);
     font-size: 12px;
   }
-  input[type="text"], input[type="url"], textarea {
+  input[type="text"], input[type="url"], input[type="password"], textarea {
     width: 100%;
     padding: 11px 13px;
     border: 1.5px solid var(--border);
@@ -119,16 +119,41 @@
   }
   #status.success { display: block; background: #e6f4ea; color: var(--success); border: 1px solid #b7dfc2; }
   #status.error { display: block; background: #fbe9e7; color: #b3261e; border: 1px solid #f1c4be; }
+  #gateError {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: none;
+    background: #fbe9e7; color: #b3261e; border: 1px solid #f1c4be;
+  }
   .footer-note {
     text-align: center;
     font-size: 12px;
     color: var(--muted);
     margin-top: 20px;
   }
+  #appRoot { display: none; }
 </style>
 </head>
 <body>
-  <div class="card">
+  <div class="card" id="gateCard">
+    <div class="header">
+      <div class="eyebrow">Total Service &mdash; Elevator Industry Content</div>
+      <h1>Enter Access Code</h1>
+      <p>This topic submission form is restricted. Enter the access code to continue.</p>
+    </div>
+    <div class="gate-body">
+      <div class="field">
+        <label for="pinInput">Access Code</label>
+        <input type="password" id="pinInput" autocomplete="off" placeholder="Enter code">
+      </div>
+      <button type="button" id="gateBtn">Continue</button>
+      <div id="gateError">Incorrect code. Please try again.</div>
+    </div>
+  </div>
+
+  <div class="card" id="appRoot">
     <div class="header">
       <div class="eyebrow">Total Service &mdash; Elevator Industry Content</div>
       <h1>Submit a Topic Request</h1>
@@ -160,6 +185,45 @@
 
 <script>
   const WEBHOOK_URL = "https://build.twin.so/triggers/6b22ad56-84b2-4b30-9e43-a1fb835989a3/webhook";
+  const ACCESS_CODE = "dVb*18933";
+  const SESSION_KEY = "tsr_access_granted";
+
+  const gateCard = document.getElementById('gateCard');
+  const appRoot = document.getElementById('appRoot');
+  const pinInput = document.getElementById('pinInput');
+  const gateBtn = document.getElementById('gateBtn');
+  const gateError = document.getElementById('gateError');
+
+  function unlock() {
+    gateCard.style.display = 'none';
+    appRoot.style.display = 'block';
+  }
+
+  function checkPin() {
+    if (pinInput.value === ACCESS_CODE) {
+      try { sessionStorage.setItem(SESSION_KEY, '1'); } catch (e) {}
+      gateError.style.display = 'none';
+      unlock();
+    } else {
+      gateError.style.display = 'block';
+    }
+  }
+
+  gateBtn.addEventListener('click', checkPin);
+  pinInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); checkPin(); }
+  });
+
+  (function initGate() {
+    try {
+      if (sessionStorage.getItem(SESSION_KEY) === '1') {
+        unlock();
+        return;
+      }
+    } catch (e) {}
+    gateCard.style.display = 'block';
+  })();
+
   const form = document.getElementById('topicForm');
   const statusEl = document.getElementById('status');
   const btn = document.getElementById('submitBtn');
